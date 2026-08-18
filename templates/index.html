@@ -1,0 +1,765 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>ChurnIQ — Customer Churn Predictor</title>
+
+<style>
+* {
+    box-sizing: border-box;
+}
+
+:root {
+    --bg: #080b12;
+    --card: rgba(17, 23, 34, 0.82);
+    --border: rgba(255,255,255,0.09);
+    --text: #f4f7fb;
+    --muted: #8993a5;
+    --accent: #6d5dfc;
+    --accent2: #00d4ff;
+    --green: #22c55e;
+    --red: #ff4d67;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", "Segoe UI", sans-serif;
+    color: var(--text);
+    background:
+        radial-gradient(circle at 10% 10%, rgba(109,93,252,.20), transparent 30%),
+        radial-gradient(circle at 90% 20%, rgba(0,212,255,.12), transparent 28%),
+        linear-gradient(135deg, #080b12, #0d111b 50%, #080b12);
+}
+
+.container {
+    width: min(1100px, 92%);
+    margin: auto;
+    padding: 45px 0 70px;
+}
+
+/* Header */
+
+.header {
+    text-align: center;
+    margin-bottom: 35px;
+}
+
+.logo {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    font-size: 14px;
+    font-weight: 700;
+    letter-spacing: 2px;
+    text-transform: uppercase;
+    color: #b8b1ff;
+    margin-bottom: 18px;
+}
+
+.logo-dot {
+    width: 9px;
+    height: 9px;
+    border-radius: 50%;
+    background: linear-gradient(135deg, var(--accent), var(--accent2));
+    box-shadow: 0 0 18px var(--accent);
+}
+
+h1 {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3.5rem);
+    letter-spacing: -2px;
+    line-height: 1.05;
+}
+
+.gradient {
+    background: linear-gradient(90deg, #ffffff, #9d94ff, #55dcff);
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.subtitle {
+    max-width: 650px;
+    margin: 16px auto 0;
+    color: var(--muted);
+    font-size: 16px;
+    line-height: 1.6;
+}
+
+/* Main card */
+
+.main-card {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 24px;
+    padding: 30px;
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 70px rgba(0,0,0,.35);
+}
+
+.section-title {
+    margin-bottom: 24px;
+}
+
+.section-title h2 {
+    margin: 0 0 5px;
+    font-size: 20px;
+}
+
+.section-title p {
+    margin: 0;
+    color: var(--muted);
+    font-size: 13px;
+}
+
+/* Form */
+
+.grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 18px;
+}
+
+.field label {
+    display: block;
+    margin-bottom: 8px;
+    color: #aeb7c7;
+    font-size: 12px;
+    font-weight: 600;
+    text-transform: uppercase;
+    letter-spacing: .6px;
+}
+
+input,
+select {
+    width: 100%;
+    height: 48px;
+    padding: 0 14px;
+    border: 1px solid rgba(255,255,255,.09);
+    border-radius: 11px;
+    outline: none;
+    background: rgba(255,255,255,.045);
+    color: white;
+    font-size: 14px;
+    transition: .2s ease;
+}
+
+select option {
+    background: #151a25;
+    color: white;
+}
+
+input:focus,
+select:focus {
+    border-color: var(--accent);
+    box-shadow: 0 0 0 3px rgba(109,93,252,.12);
+    background: rgba(255,255,255,.065);
+}
+
+.button-wrap {
+    margin-top: 28px;
+}
+
+button {
+    width: 100%;
+    height: 54px;
+    border: 0;
+    border-radius: 13px;
+    color: white;
+    font-size: 15px;
+    font-weight: 700;
+    cursor: pointer;
+    background: linear-gradient(90deg, var(--accent), #4b9dff);
+    box-shadow: 0 12px 30px rgba(109,93,252,.25);
+    transition: transform .2s, box-shadow .2s;
+}
+
+button:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 16px 35px rgba(109,93,252,.35);
+}
+
+button:active {
+    transform: translateY(0);
+}
+
+/* Result */
+
+.result {
+    display: none;
+    margin-top: 25px;
+    padding: 28px;
+    border-radius: 20px;
+    border: 1px solid var(--border);
+    background: rgba(255,255,255,.035);
+}
+
+.result-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 20px;
+}
+
+.result-title {
+    color: var(--muted);
+    font-size: 12px;
+    text-transform: uppercase;
+    letter-spacing: 1px;
+}
+
+.result-label {
+    margin-top: 5px;
+    font-size: 27px;
+    font-weight: 800;
+}
+
+.result-percent {
+    font-size: 42px;
+    font-weight: 800;
+    background: linear-gradient(90deg, #ffffff, #8c83ff);
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.bar-container {
+    margin-top: 22px;
+}
+
+.bar-bg {
+    height: 12px;
+    border-radius: 20px;
+    background: rgba(255,255,255,.08);
+    overflow: hidden;
+}
+
+.bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 20px;
+    background: linear-gradient(90deg, var(--accent), var(--accent2));
+    transition: width 1s ease;
+}
+
+.bar-labels {
+    display: flex;
+    justify-content: space-between;
+    color: var(--muted);
+    font-size: 11px;
+    margin-top: 7px;
+}
+
+.footer {
+    text-align: center;
+    margin-top: 28px;
+    color: #5f6878;
+    font-size: 12px;
+}
+
+@media (max-width: 850px) {
+    .grid {
+        grid-template-columns: repeat(2, 1fr);
+    }
+}
+
+@media (max-width: 550px) {
+    .container {
+        padding-top: 25px;
+    }
+
+    .main-card {
+        padding: 20px;
+        border-radius: 18px;
+    }
+
+    .grid {
+        grid-template-columns: 1fr;
+    }
+
+    .result-header {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+}
+
+/* ===== FLIP CARD ===== */
+
+.main-card {
+    perspective: 1200px;
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
+}
+
+.flip-card {
+    position: relative;
+    width: 100%;
+    min-height: 600px;
+    transform-style: preserve-3d;
+    transition: transform 0.8s cubic-bezier(.4,.2,.2,1);
+}
+
+.flip-card.flipped {
+    transform: rotateY(180deg);
+}
+
+.flip-front,
+.flip-back {
+    position: absolute;
+    inset: 0;
+    width: 100%;
+    min-height: 600px;
+    padding: 30px;
+    border-radius: 24px;
+    background: rgba(17, 23, 34, 0.88);
+    border: 1px solid rgba(255,255,255,.09);
+    backdrop-filter: blur(20px);
+    box-shadow: 0 25px 70px rgba(0,0,0,.35);
+    backface-visibility: hidden;
+    -webkit-backface-visibility: hidden;
+}
+
+.flip-back {
+    transform: rotateY(180deg);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+}
+
+.result-screen {
+    width: 100%;
+    max-width: 600px;
+}
+
+.result-icon {
+    width: 90px;
+    height: 90px;
+    margin: 0 auto 25px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 42px;
+    background: rgba(255,77,103,.12);
+    border: 1px solid rgba(255,77,103,.25);
+    box-shadow: 0 0 45px rgba(255,77,103,.15);
+}
+
+.result-heading {
+    color: #8d95a5;
+    font-size: 13px;
+    text-transform: uppercase;
+    letter-spacing: 2px;
+    margin-bottom: 12px;
+}
+
+.result-risk {
+    margin: 0;
+    font-size: clamp(2rem, 5vw, 3.2rem);
+    font-weight: 800;
+    color: #ff4d67;
+}
+
+.result-probability {
+    margin-top: 18px;
+    font-size: 55px;
+    font-weight: 800;
+    background: linear-gradient(90deg,#ff4d67,#ff9a6a);
+    -webkit-background-clip: text;
+    color: transparent;
+}
+
+.result-message {
+    margin: 15px auto 28px;
+    max-width: 470px;
+    color: #8993a5;
+    line-height: 1.6;
+}
+
+.result-bar {
+    width: 100%;
+    height: 12px;
+    background: rgba(255,255,255,.08);
+    border-radius: 20px;
+    overflow: hidden;
+}
+
+.result-bar-fill {
+    height: 100%;
+    width: 0;
+    border-radius: 20px;
+    background: linear-gradient(90deg,#ff4d67,#ff9a6a);
+    transition: width 1s ease .4s;
+}
+
+.back-btn {
+    margin-top: 28px;
+    width: auto;
+    padding: 0 28px;
+    background: rgba(255,255,255,.07);
+    border: 1px solid rgba(255,255,255,.1);
+    box-shadow: none;
+}
+
+.back-btn:hover {
+    background: rgba(255,255,255,.12);
+    box-shadow: none;
+}
+
+@media (max-width: 600px) {
+    .flip-front,
+    .flip-back {
+        padding: 20px;
+    }
+
+    .flip-card,
+    .flip-front,
+    .flip-back {
+        min-height: 650px;
+    }
+}
+
+</style>
+</head>
+
+<body>
+
+<div class="container">
+
+    <div class="header">
+        <div class="logo">
+            <span class="logo-dot"></span>
+            ChurnIQ
+        </div>
+
+        <h1>
+            Predict Customer
+            <span class="gradient">Churn Risk</span>
+        </h1>
+
+        <p class="subtitle">
+            Analyze customer behavior and estimate the probability
+            that a customer may leave your service.
+        </p>
+    </div>
+
+    <div class="main-card">
+
+    <div class="flip-card" id="flip-card">
+
+        <div class="flip-front">
+
+        <div class="section-title">
+            <h2>Customer Profile</h2>
+            <p>Enter the customer's information below.</p>
+        </div>
+
+        <form id="churn-form">
+
+            <div class="grid">
+
+                <div class="field">
+                    <label>Tenure (Months)</label>
+                    <input type="number" name="tenure" value="2" min="0" max="72" required>
+                </div>
+
+                <div class="field">
+                    <label>Monthly Charges ($)</label>
+                    <input type="number" step="0.01" name="MonthlyCharges" value="95" required>
+                </div>
+
+                <div class="field">
+                    <label>Total Charges ($)</label>
+                    <input type="number" step="0.01" name="TotalCharges" value="190" required>
+                </div>
+
+                <div class="field">
+                    <label>Senior Citizen</label>
+                    <select name="SeniorCitizen">
+                        <option value="0">No</option>
+                        <option value="1">Yes</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Gender</label>
+                    <select name="gender">
+                        <option>Female</option>
+                        <option>Male</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Partner</label>
+                    <select name="Partner">
+                        <option>No</option>
+                        <option>Yes</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Dependents</label>
+                    <select name="Dependents">
+                        <option>No</option>
+                        <option>Yes</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Phone Service</label>
+                    <select name="PhoneService">
+                        <option>Yes</option>
+                        <option>No</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Multiple Lines</label>
+                    <select name="MultipleLines">
+                        <option>No</option>
+                        <option>Yes</option>
+                        <option>No phone service</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Internet Service</label>
+                    <select name="InternetService">
+                        <option>Fiber optic</option>
+                        <option>DSL</option>
+                        <option>No</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Online Security</label>
+                    <select name="OnlineSecurity">
+                        <option>No</option>
+                        <option>Yes</option>
+                        <option>No internet service</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Tech Support</label>
+                    <select name="TechSupport">
+                        <option>No</option>
+                        <option>Yes</option>
+                        <option>No internet service</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Contract</label>
+                    <select name="Contract">
+                        <option>Month-to-month</option>
+                        <option>One year</option>
+                        <option>Two year</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Paperless Billing</label>
+                    <select name="PaperlessBilling">
+                        <option>Yes</option>
+                        <option>No</option>
+                    </select>
+                </div>
+
+                <div class="field">
+                    <label>Payment Method</label>
+                    <select name="PaymentMethod">
+                        <option>Electronic check</option>
+                        <option>Mailed check</option>
+                        <option>Bank transfer</option>
+                        <option>Credit card</option>
+                    </select>
+                </div>
+
+            </div>
+
+            <div class="button-wrap">
+                <button type="submit">
+                    Analyze Churn Risk →
+                </button>
+            </div>
+
+        </form>
+
+        </div>
+
+        <div class="flip-back">
+
+            <div class="result-screen">
+
+                <div class="result-icon" id="result-icon">⚠</div>
+
+                <div class="result-heading">
+                    Prediction Result
+                </div>
+
+                <h2 class="result-risk" id="result-label">
+                    ⚠ High Churn Risk
+                </h2>
+
+                <div class="result-probability" id="result-percent">
+                    0%
+                </div>
+
+                <p class="result-message" id="result-message">
+                    This customer has a high probability of leaving the service.
+                </p>
+
+                <div class="result-bar">
+                    <div class="result-bar-fill" id="prob-bar"></div>
+                </div>
+
+                <button type="button" class="back-btn" onclick="flipBack()">
+                    ← Analyze Another Customer
+                </button>
+
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="result" id="result">
+
+            <div class="result-header">
+
+                <div>
+                    <div class="result-title">Prediction Result</div>
+                    <div class="result-label" id="result-label"></div>
+                </div>
+
+                <div class="result-percent" id="result-percent">
+                    0%
+                </div>
+
+            </div>
+
+            <div class="bar-container">
+                <div class="bar-bg">
+                    <div class="bar-fill" id="prob-bar"></div>
+                </div>
+
+                <div class="bar-labels">
+                    <span>Low Risk</span>
+                    <span>High Risk</span>
+                </div>
+            </div>
+
+        </div>
+
+    </div>
+
+    <div class="footer">
+        ChurnIQ · Machine Learning Prediction System
+    </div>
+
+</div>
+
+<script>
+
+const form = document.getElementById("churn-form");
+const result = document.getElementById("result");
+const flipCard = document.getElementById("flip-card");
+const resultLabel = document.getElementById("result-label");
+const resultIcon = document.getElementById("result-icon");
+const resultMessage = document.getElementById("result-message");
+const resultPercent = document.getElementById("result-percent");
+const probBar = document.getElementById("prob-bar");
+
+form.addEventListener("submit", async function(e) {
+
+    e.preventDefault();
+
+    const formData = new FormData(form);
+    const payload = {};
+
+    for (const [key, value] of formData.entries()) {
+
+        if (["tenure", "SeniorCitizen"].includes(key)) {
+            payload[key] = parseInt(value, 10);
+
+        } else if (["MonthlyCharges", "TotalCharges"].includes(key)) {
+            payload[key] = parseFloat(value);
+
+        } else {
+            payload[key] = value;
+        }
+    }
+
+    try {
+
+        const response = await fetch("/api/predict", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const data = await response.json();
+
+        if (data.error) {
+            alert("Error: " + data.error);
+            return;
+        }
+
+        const pct = data.churn_probability * 100;
+
+        resultPercent.textContent = pct.toFixed(1) + "%";
+        probBar.style.width = pct + "%";
+
+        // Flip the card to show prediction
+        flipCard.classList.add("flipped");
+
+        if (data.churn === "Yes") {
+
+            resultLabel.textContent = "⚠ High Churn Risk";
+            resultLabel.style.color = "#ff4d67";
+            resultIcon.textContent = "⚠";
+            resultMessage.textContent =
+                "This customer has a high probability of leaving the service.";
+            probBar.style.background =
+                "linear-gradient(90deg, #ff4d67, #ff8a5c)";
+
+        } else {
+
+            resultLabel.textContent = "✓ Customer Likely to Stay";
+            resultLabel.style.color = "#22c55e";
+            resultIcon.textContent = "✓";
+            resultIcon.style.background = "rgba(34,197,94,.12)";
+            resultMessage.textContent =
+                "This customer has a low probability of leaving the service.";
+            probBar.style.background =
+                "linear-gradient(90deg, #22c55e, #00d4ff)";
+        }
+
+        window.scrollTo({
+            top: 0,
+            behavior: "smooth"
+        });
+
+    } catch (error) {
+
+        alert("Unable to connect to prediction server.");
+
+    }
+
+});
+
+function flipBack() {
+    flipCard.classList.remove("flipped");
+    probBar.style.width = "0%";
+}
+
+</script>
+
+</body>
+</html>

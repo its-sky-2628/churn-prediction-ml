@@ -1,0 +1,12 @@
+{
+  "accuracy": 0.698,
+  "precision": 0.5844444444444444,
+  "recall": 0.6957671957671958,
+  "f1_score": 0.6352657004830918,
+  "roc_auc": 0.7560948638119056,
+  "best_params": {
+    "classifier__max_depth": 8,
+    "classifier__min_samples_leaf": 2,
+    "classifier__n_estimators": 400
+  }
+}

@@ -1,0 +1,189 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Customer Churn Predictor</title>
+<style>
+  :root {
+    --blue: #4C72B0;
+    --bg: #f5f7fa;
+    --card: #ffffff;
+    --text: #24292e;
+    --muted: #6a737d;
+    --green: #2e7d32;
+    --red: #c62828;
+  }
+  * { box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    margin: 0;
+    padding: 2rem 1rem;
+  }
+  .container { max-width: 720px; margin: 0 auto; }
+  h1 { font-size: 1.6rem; margin-bottom: 0.25rem; }
+  p.subtitle { color: var(--muted); margin-top: 0; margin-bottom: 1.5rem; }
+  .card {
+    background: var(--card);
+    border-radius: 10px;
+    padding: 1.5rem;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.08);
+    margin-bottom: 1.5rem;
+  }
+  .grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1rem; }
+  @media (max-width: 600px) { .grid { grid-template-columns: 1fr; } }
+  label { display: block; font-size: 0.85rem; margin-bottom: 0.25rem; color: var(--muted); }
+  select, input {
+    width: 100%; padding: 0.5rem; border: 1px solid #d0d7de; border-radius: 6px;
+    font-size: 0.95rem; margin-bottom: 0.9rem; background: white;
+  }
+  button {
+    background: var(--blue); color: white; border: none; padding: 0.7rem 1.4rem;
+    border-radius: 6px; font-size: 1rem; cursor: pointer;
+  }
+  button:hover { opacity: 0.9; }
+  #result { display: none; }
+  .result-yes { color: var(--red); }
+  .result-no { color: var(--green); }
+  .prob-bar-bg { background: #eee; border-radius: 6px; height: 12px; overflow: hidden; margin-top: 0.5rem; }
+  .prob-bar-fill { height: 100%; background: var(--blue); }
+  .big { font-size: 1.4rem; font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>Customer Churn Predictor</h1>
+  <p class="subtitle">Fill in a customer's profile to estimate their probability of churning.</p>
+
+  <div class="card">
+    <form id="churn-form">
+      <div class="grid">
+        <div>
+          <label>Tenure (months)</label>
+          <input type="number" name="tenure" value="2" min="0" max="72" required>
+        </div>
+        <div>
+          <label>Monthly Charges ($)</label>
+          <input type="number" step="0.01" name="MonthlyCharges" value="95.0" required>
+        </div>
+        <div>
+          <label>Total Charges ($)</label>
+          <input type="number" step="0.01" name="TotalCharges" value="190.0" required>
+        </div>
+        <div>
+          <label>Senior Citizen</label>
+          <select name="SeniorCitizen">
+            <option value="0">No</option>
+            <option value="1">Yes</option>
+          </select>
+        </div>
+        <div>
+          <label>Gender</label>
+          <select name="gender"><option>Female</option><option>Male</option></select>
+        </div>
+        <div>
+          <label>Partner</label>
+          <select name="Partner"><option>No</option><option>Yes</option></select>
+        </div>
+        <div>
+          <label>Dependents</label>
+          <select name="Dependents"><option>No</option><option>Yes</option></select>
+        </div>
+        <div>
+          <label>Phone Service</label>
+          <select name="PhoneService"><option>Yes</option><option>No</option></select>
+        </div>
+        <div>
+          <label>Multiple Lines</label>
+          <select name="MultipleLines"><option>No</option><option>Yes</option><option>No phone service</option></select>
+        </div>
+        <div>
+          <label>Internet Service</label>
+          <select name="InternetService"><option>Fiber optic</option><option>DSL</option><option>No</option></select>
+        </div>
+        <div>
+          <label>Online Security</label>
+          <select name="OnlineSecurity"><option>No</option><option>Yes</option><option>No internet service</option></select>
+        </div>
+        <div>
+          <label>Tech Support</label>
+          <select name="TechSupport"><option>No</option><option>Yes</option><option>No internet service</option></select>
+        </div>
+        <div>
+          <label>Contract</label>
+          <select name="Contract"><option>Month-to-month</option><option>One year</option><option>Two year</option></select>
+        </div>
+        <div>
+          <label>Paperless Billing</label>
+          <select name="PaperlessBilling"><option>Yes</option><option>No</option></select>
+        </div>
+        <div>
+          <label>Payment Method</label>
+          <select name="PaymentMethod">
+            <option>Electronic check</option>
+            <option>Mailed check</option>
+            <option>Bank transfer</option>
+            <option>Credit card</option>
+          </select>
+        </div>
+      </div>
+      <button type="submit">Predict Churn Risk</button>
+    </form>
+  </div>
+
+  <div class="card" id="result">
+    <div class="big" id="result-label"></div>
+    <div id="result-prob-text" style="margin-top: 0.4rem; color: var(--muted);"></div>
+    <div class="prob-bar-bg"><div class="prob-bar-fill" id="prob-bar" style="width:0%"></div></div>
+  </div>
+</div>
+
+<script>
+const form = document.getElementById('churn-form');
+const resultCard = document.getElementById('result');
+const resultLabel = document.getElementById('result-label');
+const resultProbText = document.getElementById('result-prob-text');
+const probBar = document.getElementById('prob-bar');
+
+form.addEventListener('submit', async (e) => {
+  e.preventDefault();
+  const formData = new FormData(form);
+  const payload = {};
+  for (const [key, value] of formData.entries()) {
+    if (['tenure', 'SeniorCitizen'].includes(key)) {
+      payload[key] = parseInt(value, 10);
+    } else if (['MonthlyCharges', 'TotalCharges'].includes(key)) {
+      payload[key] = parseFloat(value);
+    } else {
+      payload[key] = value;
+    }
+  }
+
+  const res = await fetch('/api/predict', {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(payload)
+  });
+  const data = await res.json();
+
+  if (data.error) {
+    alert('Error: ' + data.error);
+    return;
+  }
+
+  resultCard.style.display = 'block';
+  const pct = (data.churn_probability * 100).toFixed(1);
+  if (data.churn === 'Yes') {
+    resultLabel.textContent = `⚠ Likely to churn`;
+    resultLabel.className = 'big result-yes';
+  } else {
+    resultLabel.textContent = `✓ Likely to stay`;
+    resultLabel.className = 'big result-no';
+  }
+  resultProbText.textContent = `Churn probability: ${pct}%`;
+  probBar.style.width = pct + '%';
+});
+</script>
+</body>
+</html>
